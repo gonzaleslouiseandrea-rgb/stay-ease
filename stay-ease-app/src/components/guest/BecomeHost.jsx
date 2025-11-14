@@ -60,10 +60,13 @@ export default function BecomeHost() {
         {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
         <Stepper activeStep={step} alternativeLabel sx={{ mb: 3 }}>
           <Step>
-            <StepLabel>Confirm Requirements</StepLabel>
+            <StepLabel>Requirements</StepLabel>
           </Step>
           <Step>
-            <StepLabel>Choose Plan & Confirm</StepLabel>
+            <StepLabel>Subscription</StepLabel>
+          </Step>
+          <Step>
+            <StepLabel>Terms & Policy</StepLabel>
           </Step>
         </Stepper>
 
@@ -135,7 +138,7 @@ export default function BecomeHost() {
                 }}
                 onClick={() => setStep(1)}
               >
-                Continue to Plan
+                Continue to Subscription
               </Button>
             </>
           )}
@@ -143,11 +146,11 @@ export default function BecomeHost() {
           {step === 1 && (
             <>
               <Typography variant="subtitle1" fontWeight={600} mb={1}>
-                Step 2: Subscription Plan & Policies
+                Step 2: Subscription Plan
               </Typography>
               <Typography variant="body2" color="text.secondary" mb={2}>
-                Select a plan that fits how often you intend to host. You’ll complete the payment on the Host
-                Dashboard after submission.
+                Select a plan that fits how often you intend to host. You’ll be able to manage and process
+                subscription payments from the Host Dashboard after becoming a host.
               </Typography>
 
               <Typography variant="subtitle2" fontWeight={600} mb={1}>
@@ -172,10 +175,48 @@ export default function BecomeHost() {
               </RadioGroup>
 
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                You’ll complete the payment on the Host Dashboard → Subscription after submission.
+                You’ll complete the payment on the Host Dashboard → Subscription after you are approved as a host.
               </Typography>
 
-              <Divider sx={{ my: 3 }} />
+              <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+                <Button
+                  type="button"
+                  variant="outlined"
+                  fullWidth
+                  onClick={() => setStep(0)}
+                >
+                  Back
+                </Button>
+                <Button
+                  fullWidth
+                  type="button"
+                  sx={{
+                    bgcolor: "#87ab69",
+                    color: "#fffdd0",
+                    "&:hover": { bgcolor: "#76965d" },
+                  }}
+                  onClick={() => setStep(2)}
+                >
+                  Continue to Terms
+                </Button>
+              </Box>
+            </>
+          )}
+
+          {step === 2 && (
+            <>
+              <Typography variant="subtitle1" fontWeight={600} mb={1}>
+                Step 3: Terms & Security Policy
+              </Typography>
+              <Typography variant="body2" color="text.secondary" mb={2}>
+                Please review our Terms of Service and Security & Safety Policy. You must agree to these before
+                becoming a StayEase host.
+              </Typography>
+
+              <Typography variant="body2" mb={2}>
+                By continuing, you acknowledge your responsibility to provide accurate information, maintain a safe and
+                compliant space, and follow all applicable local regulations and StayEase hosting standards.
+              </Typography>
 
               <FormControlLabel
                 control={
@@ -186,7 +227,7 @@ export default function BecomeHost() {
                 }
                 label={
                   <>
-                    I agree to the&nbsp;
+                    I have read and agree to the&nbsp;
                     <Link href="#" target="_blank" rel="noopener">
                       Terms of Service
                     </Link>
@@ -204,7 +245,7 @@ export default function BecomeHost() {
                   type="button"
                   variant="outlined"
                   fullWidth
-                  onClick={() => setStep(0)}
+                  onClick={() => setStep(1)}
                 >
                   Back
                 </Button>
@@ -217,7 +258,7 @@ export default function BecomeHost() {
                     "&:hover": { bgcolor: "#76965d" },
                   }}
                 >
-                  Submit & Continue
+                  Agree & Become Host
                 </Button>
               </Box>
             </>

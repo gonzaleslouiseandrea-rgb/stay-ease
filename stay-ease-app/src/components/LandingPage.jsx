@@ -17,6 +17,10 @@ import {
   Skeleton,
   Alert,
 } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { DateRangePicker } from "@mui/x-date-pickers-pro";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
 import SearchIcon from "@mui/icons-material/Search";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import HomeWorkIcon from "@mui/icons-material/HomeWork";
@@ -59,6 +63,7 @@ export default function LandingPage() {
   
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
+  const [dateRange, setDateRange] = useState([null, null]);
   const [guests, setGuests] = useState(1);
   const [unavailableListingIds, setUnavailableListingIds] = useState(new Set());
 
@@ -218,23 +223,24 @@ export default function LandingPage() {
                   size="medium"
                 />
 
-                {/* Dates */}
-                <TextField
-                  type="date"
-                  label="Check-in"
-                  InputLabelProps={{ shrink: true }}
-                  value={checkIn}
-                  onChange={(e) => setCheckIn(e.target.value)}
-                  size="medium"
-                />
-                <TextField
-                  type="date"
-                  label="Check-out"
-                  InputLabelProps={{ shrink: true }}
-                  value={checkOut}
-                  onChange={(e) => setCheckOut(e.target.value)}
-                  size="medium"
-                />
+                {/* Dates – single range calendar */}
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DateRangePicker
+                    value={dateRange}
+                    onChange={(newValue) => {
+                      setDateRange(newValue);
+                      const [start, end] = newValue || [];
+                      setCheckIn(start ? start.format("YYYY-MM-DD") : "");
+                      setCheckOut(end ? end.format("YYYY-MM-DD") : "");
+                    }}
+                    localeText={{ start: "Check-in", end: "Check-out" }}
+                    slotProps={{
+                      textField: {
+                        size: "medium",
+                      },
+                    }}
+                  />
+                </LocalizationProvider>
 
                 {/* Who */}
                 <TextField
