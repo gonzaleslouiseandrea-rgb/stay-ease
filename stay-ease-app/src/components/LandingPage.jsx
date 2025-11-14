@@ -19,7 +19,7 @@ import {
   MenuItem,
 } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers";
-import { SingleInputDateRangePicker } from "@mui/x-date-pickers-pro";
+import { DateRangePicker } from "@mui/x-date-pickers-pro";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import SearchIcon from "@mui/icons-material/Search";
@@ -227,9 +227,9 @@ export default function LandingPage() {
                   size="medium"
                 />
 
-                {/* Dates – single input date-range calendar */}
+                {/* Dates – single calendar date range */}
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <SingleInputDateRangePicker
+                  <DateRangePicker
                     value={dateRange}
                     onChange={(newValue) => {
                       setDateRange(newValue);
@@ -240,7 +240,6 @@ export default function LandingPage() {
                     slotProps={{
                       textField: {
                         size: "medium",
-                        fullWidth: false,
                       },
                     }}
                   />
