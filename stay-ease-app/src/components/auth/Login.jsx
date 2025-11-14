@@ -111,7 +111,7 @@ export default function Login() {
         justifyContent: "center",
         position: "relative",
         backgroundImage:
-          "linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.35)), url('https://images.unsplash.com/photo-1505691723518-36a5ac3be353?auto=format&fit=crop&w=1600&q=80')",
+          "linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=1600&q=80')",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}

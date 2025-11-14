@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { Box, TextField, Button, Typography, Paper, Alert, FormGroup, FormControlLabel, Checkbox, RadioGroup, Radio, Divider, Link } from "@mui/material";
+import { Box, Button, Typography, Paper, Alert, FormGroup, FormControlLabel, Checkbox, RadioGroup, Radio, Divider, Link, Stepper, Step, StepLabel } from "@mui/material";
 import { db, auth } from "../../firebaseConfig";
 import { doc, updateDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
 export default function BecomeHost() {
-  const [form, setForm] = useState({ experience: "", propertyType: "", description: "" });
+  const [step, setStep] = useState(0);
   const [requirements, setRequirements] = useState({
     validId: false,
     propertyRight: false,
@@ -18,28 +18,18 @@ export default function BecomeHost() {
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
 
-    const { experience, propertyType, description } = form;
-    if (!experience || !propertyType || !description) return setError("Please fill all fields.");
     if (!requirements.validId || !requirements.propertyRight || !requirements.safetyClean || !requirements.payoutReady)
       return setError("Please confirm all hosting requirements.");
     if (!acceptTerms) return setError("You must accept the Terms and Security Policies.");
 
     try {
-      // Minimal eligibility check
-      if (experience.length <= 10) return setError("Please provide more details about your hosting experience.");
-
       await updateDoc(doc(db, "users", auth.currentUser.uid), {
         role: "host",
-        hostDetails: form,
         hostRequirements: requirements,
         selectedPlan: plan,
         acknowledgedPoliciesAt: new Date().toISOString(),
@@ -68,81 +58,170 @@ export default function BecomeHost() {
         </Typography>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+        <Stepper activeStep={step} alternativeLabel sx={{ mb: 3 }}>
+          <Step>
+            <StepLabel>Confirm Requirements</StepLabel>
+          </Step>
+          <Step>
+            <StepLabel>Choose Plan & Confirm</StepLabel>
+          </Step>
+        </Stepper>
+
         <form onSubmit={handleSubmit}>
-          <Typography variant="subtitle1" fontWeight={600} mb={1}>Basic Information</Typography>
-          <TextField
-            label="Hosting Experience (in years or details)"
-            name="experience"
-            fullWidth
-            margin="normal"
-            onChange={handleChange}
-            value={form.experience}
-          />
-          <TextField
-            label="Type of Property (Home, Experience, Service)"
-            name="propertyType"
-            fullWidth
-            margin="normal"
-            onChange={handleChange}
-            value={form.propertyType}
-          />
-          <TextField
-            label="Short Description"
-            name="description"
-            multiline
-            rows={4}
-            fullWidth
-            margin="normal"
-            onChange={handleChange}
-            value={form.description}
-          />
+          {step === 0 && (
+            <>
+              <Typography variant="subtitle1" fontWeight={600} mb={1}>
+                Step 1: Hosting Requirements
+              </Typography>
+              <Typography variant="body2" color="text.secondary" mb={2}>
+                To host with StayEase, you must meet all of the following requirements. Please review and confirm each
+                item.
+              </Typography>
+              <FormGroup>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={requirements.validId}
+                      onChange={(e) => setRequirements((r) => ({ ...r, validId: e.target.checked }))}
+                    />
+                  }
+                  label="I have a valid government-issued ID (to be provided upon request)."
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={requirements.propertyRight}
+                      onChange={(e) => setRequirements((r) => ({ ...r, propertyRight: e.target.checked }))}
+                    />
+                  }
+                  label="I own the property OR have written permission to host it."
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={requirements.safetyClean}
+                      onChange={(e) => setRequirements((r) => ({ ...r, safetyClean: e.target.checked }))}
+                    />
+                  }
+                  label="The space meets basic safety, cleanliness, and local compliance standards."
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={requirements.payoutReady}
+                      onChange={(e) => setRequirements((r) => ({ ...r, payoutReady: e.target.checked }))}
+                    />
+                  }
+                  label="I can receive payouts (PayPal/Bank/E-wallet) and provide accurate details."
+                />
+              </FormGroup>
 
-          <Divider sx={{ my: 3 }} />
+              <Divider sx={{ my: 3 }} />
 
-          <Typography variant="subtitle1" fontWeight={600} mb={1}>Hosting Requirements</Typography>
-          <FormGroup>
-            <FormControlLabel control={<Checkbox checked={requirements.validId} onChange={(e)=>setRequirements(r=>({...r, validId: e.target.checked}))} />} label="I have a valid government-issued ID (to be provided upon request)." />
-            <FormControlLabel control={<Checkbox checked={requirements.propertyRight} onChange={(e)=>setRequirements(r=>({...r, propertyRight: e.target.checked}))} />} label="I own the property OR have written permission to host it." />
-            <FormControlLabel control={<Checkbox checked={requirements.safetyClean} onChange={(e)=>setRequirements(r=>({...r, safetyClean: e.target.checked}))} />} label="The space meets basic safety, cleanliness, and local compliance standards." />
-            <FormControlLabel control={<Checkbox checked={requirements.payoutReady} onChange={(e)=>setRequirements(r=>({...r, payoutReady: e.target.checked}))} />} label="I can receive payouts (PayPal/Bank/E-wallet) and provide accurate details." />
-          </FormGroup>
+              <Button
+                type="button"
+                fullWidth
+                disabled={
+                  !requirements.validId ||
+                  !requirements.propertyRight ||
+                  !requirements.safetyClean ||
+                  !requirements.payoutReady
+                }
+                sx={{
+                  mt: 1,
+                  bgcolor: "#87ab69",
+                  color: "#fffdd0",
+                  "&:hover": { bgcolor: "#76965d" },
+                }}
+                onClick={() => setStep(1)}
+              >
+                Continue to Plan
+              </Button>
+            </>
+          )}
 
-          <Divider sx={{ my: 3 }} />
+          {step === 1 && (
+            <>
+              <Typography variant="subtitle1" fontWeight={600} mb={1}>
+                Step 2: Subscription Plan & Policies
+              </Typography>
+              <Typography variant="body2" color="text.secondary" mb={2}>
+                Select a plan that fits how often you intend to host. You’ll complete the payment on the Host
+                Dashboard after submission.
+              </Typography>
 
-          <Typography variant="subtitle1" fontWeight={600} mb={1}>Choose a Subscription Plan (PHP)</Typography>
-          <RadioGroup value={plan} onChange={(e)=>setPlan(e.target.value)}>
-            <FormControlLabel value="basic_monthly" control={<Radio />} label="Basic — ₱299 / month — 3 listings per month" />
-            <FormControlLabel value="pro_monthly" control={<Radio />} label="Pro — ₱599 / month — 8 listings per month" />
-            <FormControlLabel value="annual" control={<Radio />} label="Annual — ₱1299 / year — Unlimited listings" />
-          </RadioGroup>
+              <Typography variant="subtitle2" fontWeight={600} mb={1}>
+                Choose a Subscription Plan (PHP)
+              </Typography>
+              <RadioGroup value={plan} onChange={(e) => setPlan(e.target.value)}>
+                <FormControlLabel
+                  value="basic_monthly"
+                  control={<Radio />}
+                  label="Basic — ₱299 / month — 3 listings per month"
+                />
+                <FormControlLabel
+                  value="pro_monthly"
+                  control={<Radio />}
+                  label="Pro — ₱599 / month — 8 listings per month"
+                />
+                <FormControlLabel
+                  value="annual"
+                  control={<Radio />}
+                  label="Annual — ₱1299 / year — Unlimited listings"
+                />
+              </RadioGroup>
 
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            You’ll complete the payment on the Host Dashboard → Subscription after submission.
-          </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                You’ll complete the payment on the Host Dashboard → Subscription after submission.
+              </Typography>
 
-          <Divider sx={{ my: 3 }} />
+              <Divider sx={{ my: 3 }} />
 
-          <FormControlLabel
-            control={<Checkbox checked={acceptTerms} onChange={(e)=>setAcceptTerms(e.target.checked)} />}
-            label={<>
-              I agree to the&nbsp;
-              <Link href="#" target="_blank" rel="noopener">Terms of Service</Link>
-              &nbsp;and&nbsp;
-              <Link href="#" target="_blank" rel="noopener">Security & Safety Policy</Link>.
-            </>}
-          />
-          <Button
-            type="submit"
-            fullWidth
-            sx={{
-              mt: 2,
-              bgcolor: "#87ab69",
-              color: "#fffdd0",
-              "&:hover": { bgcolor: "#76965d" },
-            }}
-          >
-            Submit & Continue
-          </Button>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={acceptTerms}
+                    onChange={(e) => setAcceptTerms(e.target.checked)}
+                  />
+                }
+                label={
+                  <>
+                    I agree to the&nbsp;
+                    <Link href="#" target="_blank" rel="noopener">
+                      Terms of Service
+                    </Link>
+                    &nbsp;and&nbsp;
+                    <Link href="#" target="_blank" rel="noopener">
+                      Security & Safety Policy
+                    </Link>
+                    .
+                  </>
+                }
+              />
+
+              <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+                <Button
+                  type="button"
+                  variant="outlined"
+                  fullWidth
+                  onClick={() => setStep(0)}
+                >
+                  Back
+                </Button>
+                <Button
+                  type="submit"
+                  fullWidth
+                  sx={{
+                    bgcolor: "#87ab69",
+                    color: "#fffdd0",
+                    "&:hover": { bgcolor: "#76965d" },
+                  }}
+                >
+                  Submit & Continue
+                </Button>
+              </Box>
+            </>
+          )}
         </form>
       </Paper>
     </Box>
