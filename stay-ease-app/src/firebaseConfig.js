@@ -28,8 +28,11 @@ export const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
 export const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
 export const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
-// ✅ PayPal Client ID
+// ✅ PayPal Client & Plan IDs
 export const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+export const PAYPAL_PLAN_BASIC = import.meta.env.VITE_PAYPAL_PLAN_BASIC;
+export const PAYPAL_PLAN_PRO = import.meta.env.VITE_PAYPAL_PLAN_PRO;
+export const PAYPAL_PLAN_ANNUAL = import.meta.env.VITE_PAYPAL_PLAN_ANNUAL;
 
 // ✅ Cloudinary Upload Helper
 export const uploadToCloudinary = async (file) => {

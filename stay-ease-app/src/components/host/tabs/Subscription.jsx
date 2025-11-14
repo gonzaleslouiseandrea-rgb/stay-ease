@@ -1,13 +1,37 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { Box, Card, CardContent, CardActions, Typography, Button, Grid, Alert } from "@mui/material";
-import { db, auth, PAYPAL_CLIENT_ID } from "../../../firebaseConfig";
+import { db, auth, PAYPAL_CLIENT_ID, PAYPAL_PLAN_BASIC, PAYPAL_PLAN_PRO, PAYPAL_PLAN_ANNUAL } from "../../../firebaseConfig";
 import { doc, getDoc, setDoc, serverTimestamp, Timestamp, updateDoc } from "firebase/firestore";
 
 const PLANS = [
-  { id: "basic_monthly", name: "Basic", price: 299, currency: "PHP", interval: "monthly", quota: 3 },
-  { id: "pro_monthly", name: "Pro", price: 599, currency: "PHP", interval: "monthly", quota: 8 },
-  { id: "annual", name: "Annual", price: 1299, currency: "PHP", interval: "yearly", quota: null }, // null = unlimited
+  {
+    id: "basic_monthly",
+    name: "Basic",
+    price: 299,
+    currency: "PHP",
+    interval: "monthly",
+    quota: 3,
+    paypalPlanId: PAYPAL_PLAN_BASIC,
+  },
+  {
+    id: "pro_monthly",
+    name: "Pro",
+    price: 599,
+    currency: "PHP",
+    interval: "monthly",
+    quota: 8,
+    paypalPlanId: PAYPAL_PLAN_PRO,
+  },
+  {
+    id: "annual",
+    name: "Annual",
+    price: 1299,
+    currency: "PHP",
+    interval: "yearly",
+    quota: null, // null = unlimited
+    paypalPlanId: PAYPAL_PLAN_ANNUAL,
+  },
 ];
 
 function getPeriodEnd(start, interval) {
@@ -36,7 +60,10 @@ export default function Subscription() {
     return () => un();
   }, []);
 
-  const paypalOptions = useMemo(() => ({ "client-id": PAYPAL_CLIENT_ID, currency: "PHP" }), []);
+  const paypalOptions = useMemo(
+    () => ({ "client-id": PAYPAL_CLIENT_ID, currency: "PHP", intent: "subscription" }),
+    []
+  );
 
   const handleActivate = async (plan) => {
     setError("");
@@ -46,7 +73,7 @@ export default function Subscription() {
     }
   };
 
-  const onApproved = async (plan, order) => {
+  const onApproved = async (plan, subscription) => {
     if (!user) return;
     const now = new Date();
     const periodEnd = getPeriodEnd(now, plan.interval);
@@ -64,7 +91,7 @@ export default function Subscription() {
       active: true,
       lastPayment: {
         provider: "paypal",
-        orderID: order?.id || null,
+        orderID: subscription?.id || null,
         at: serverTimestamp(),
       },
       updatedAt: serverTimestamp(),
