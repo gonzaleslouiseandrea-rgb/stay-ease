@@ -28,7 +28,13 @@ export default function BecomeHost() {
     if (!acceptTerms) return setError("You must accept the Terms and Security Policies.");
 
     try {
-      await updateDoc(doc(db, "users", auth.currentUser.uid), {
+      const user = auth.currentUser;
+      if (!user) {
+        setError("You must be logged in to complete your host application.");
+        return;
+      }
+
+      await updateDoc(doc(db, "users", user.uid), {
         role: "host",
         hostRequirements: requirements,
         selectedPlan: plan,
