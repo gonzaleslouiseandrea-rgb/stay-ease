@@ -16,9 +16,10 @@ import {
   CardActions,
   Skeleton,
   Alert,
+  MenuItem,
 } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers";
-import { DateRangePicker } from "@mui/x-date-pickers-pro";
+import { SingleInputDateRangePicker } from "@mui/x-date-pickers-pro";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import SearchIcon from "@mui/icons-material/Search";
@@ -64,7 +65,7 @@ export default function LandingPage() {
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [dateRange, setDateRange] = useState([null, null]);
-  const [guests, setGuests] = useState(1);
+  const [guests, setGuests] = useState("1");
   const [unavailableListingIds, setUnavailableListingIds] = useState(new Set());
 
   useEffect(() => {
@@ -143,10 +144,13 @@ export default function LandingPage() {
     }
 
     // Filter by guest count if listing has capacity defined
-    if (guests && Number(guests) > 0) {
-      results = results.filter((item) =>
-        typeof item.capacity === "number" ? item.capacity >= Number(guests) : true
-      );
+    if (guests) {
+      const minGuests = guests === "5+" ? 5 : Number(guests);
+      if (!Number.isNaN(minGuests) && minGuests > 0) {
+        results = results.filter((item) =>
+          typeof item.capacity === "number" ? item.capacity >= minGuests : true
+        );
+      }
     }
 
     return results;
@@ -223,9 +227,9 @@ export default function LandingPage() {
                   size="medium"
                 />
 
-                {/* Dates – single range calendar */}
+                {/* Dates – single input date-range calendar */}
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DateRangePicker
+                  <SingleInputDateRangePicker
                     value={dateRange}
                     onChange={(newValue) => {
                       setDateRange(newValue);
@@ -233,10 +237,10 @@ export default function LandingPage() {
                       setCheckIn(start ? start.format("YYYY-MM-DD") : "");
                       setCheckOut(end ? end.format("YYYY-MM-DD") : "");
                     }}
-                    localeText={{ start: "Check-in", end: "Check-out" }}
                     slotProps={{
                       textField: {
                         size: "medium",
+                        fullWidth: false,
                       },
                     }}
                   />
@@ -244,14 +248,19 @@ export default function LandingPage() {
 
                 {/* Who */}
                 <TextField
-                  type="number"
+                  select
                   label="Who"
-                  inputProps={{ min: 1 }}
                   value={guests}
                   onChange={(e) => setGuests(e.target.value)}
                   size="medium"
                   sx={{ width: { xs: "100%", md: 140 } }}
-                />
+                >
+                  <MenuItem value="1">1</MenuItem>
+                  <MenuItem value="2">2</MenuItem>
+                  <MenuItem value="3">3</MenuItem>
+                  <MenuItem value="4">4</MenuItem>
+                  <MenuItem value="5+">5+</MenuItem>
+                </TextField>
 
                 <Button
                   type="submit"
