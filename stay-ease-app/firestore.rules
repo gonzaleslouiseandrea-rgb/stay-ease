@@ -4,8 +4,33 @@ service cloud.firestore {
 
     // ✅ USERS
     match /users/{userId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+      // Anyone can read user docs (simpler for now; tighten later if needed)
+      allow read: if true;
+
+      // Authenticated user can create and fully manage their own document
       allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == userId;
+
+      // Additionally, allow unauthenticated verification flow to perform a narrow update
+      allow update: if isVerificationCompletion();
+    }
+
+    function isVerificationCompletion() {
+      // Existing document must still be pending verification
+      return resource.data.verificationToken != null &&
+             resource.data.verificationTokenExpiry != null &&
+             // The update can only touch verification-related fields in a specific way
+             request.resource.data.verified == true &&
+             request.resource.data.verificationToken == null &&
+             request.resource.data.verificationTokenExpiry == null &&
+             request.resource.data.verifiedAt != null &&
+             // All other fields must remain unchanged
+             request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+               "verified",
+               "verificationToken",
+               "verificationTokenExpiry",
+               "verifiedAt"
+             ]);
     }
 
     // ✅ HOST APPLICATIONS
