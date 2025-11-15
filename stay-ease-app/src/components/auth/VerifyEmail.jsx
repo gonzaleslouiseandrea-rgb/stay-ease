@@ -8,8 +8,7 @@ import {
   Button,
 } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
-import { db } from "../../firebaseConfig";
-import { collection, query, where, getDocs, updateDoc, doc } from "firebase/firestore";
+const VERIFY_EMAIL_ENDPOINT = import.meta.env.VITE_VERIFY_EMAIL_ENDPOINT;
 
 export default function VerifyEmail() {
   const [status, setStatus] = useState("verifying");
@@ -50,65 +49,57 @@ export default function VerifyEmail() {
       }
 
       try {
-        const usersRef = collection(db, "users");
-        const q = query(usersRef, where("email", "==", email));
-        const querySnapshot = await getDocs(q);
-
-        if (querySnapshot.empty) {
+        if (!VERIFY_EMAIL_ENDPOINT) {
+          console.error("VITE_VERIFY_EMAIL_ENDPOINT is not configured.");
           setStatus("failed");
-          setMessage("User not found. Please register again.");
+          setMessage("Verification service is not configured. Please contact support.");
           return;
         }
 
-        const userDoc = querySnapshot.docs[0];
-        const userData = userDoc.data();
-        setVerifiedEmail(email);
+        const url = `${VERIFY_EMAIL_ENDPOINT}?email=${encodeURIComponent(
+          email
+        )}&token=${encodeURIComponent(token)}`;
 
-        // Check if already verified
-        if (userData.verified === true) {
-          setStatus("success");
-          setMessage("Your email has already been verified. You are registered! Redirecting to login...");
-          setTimeout(() => {
-            redirectToLogin();
-          }, 2000);
-          return;
-        }
-
-        // Verify token matches
-        if (userData.verificationToken !== token) {
-          setStatus("failed");
-          setMessage("Invalid verification token. The link may have expired or been used.");
-          return;
-        }
-
-        // Check if token has expired
-        if (userData.verificationTokenExpiry) {
-          const expiryDate = new Date(userData.verificationTokenExpiry);
-          if (expiryDate < new Date()) {
-            setStatus("failed");
-            setMessage("Verification link has expired. Please request a new verification email.");
-            return;
-          }
-        }
-
-        // Update user as verified and remove token
-        await updateDoc(doc(db, "users", userDoc.id), {
-          verified: true,
-          verificationToken: null,
-          verificationTokenExpiry: null,
-          verifiedAt: new Date().toISOString(),
+        const response = await fetch(url, {
+          method: "GET",
         });
 
-        setStatus("success");
-        setMessage("Your email has been successfully verified! You are now registered. Redirecting to login...");
-        
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok || !data || data.success === false) {
+          setStatus("failed");
+          setMessage(
+            (data && data.message) ||
+              "An error occurred during verification. Please try again or contact support."
+          );
+          return;
+        }
+
+        setVerifiedEmail(email);
+
+        if (data.alreadyVerified) {
+          setStatus("success");
+          setMessage(
+            data.message ||
+              "Your email has already been verified. You are registered! Redirecting to login..."
+          );
+        } else {
+          setStatus("success");
+          setMessage(
+            data.message ||
+              "Your email has been successfully verified! You are now registered. Redirecting to login..."
+          );
+        }
+
         setTimeout(() => {
           redirectToLogin();
         }, 2000);
       } catch (error) {
         console.error("Verification error:", error);
         setStatus("failed");
-        setMessage("An error occurred during verification. Please try again or contact support.");
+        setMessage(
+          "An error occurred during verification. Please try again or contact support."
+        );
       }
     };
 

@@ -8,8 +8,13 @@
  */
 
 const {setGlobalOptions} = require("firebase-functions");
-const {onRequest} = require("firebase-functions/https");
-const logger = require("firebase-functions/logger");
+const {onRequest} = require("firebase-functions/v2/https");
+const admin = require("firebase-admin");
+
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
+const db = admin.firestore();
 
 // For cost control, you can set the maximum number of containers that can be
 // running at the same time. This helps mitigate the impact of unexpected
@@ -26,7 +31,77 @@ setGlobalOptions({ maxInstances: 10 });
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
 
-// exports.helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+exports.verifyEmail = onRequest(async (req, res) => {
+  try {
+    const email = req.query.email;
+    const token = req.query.token;
+
+    if (!email || !token) {
+      res.status(400).json({success: false, message: "Missing email or token"});
+      return;
+    }
+
+    const snapshot = await db
+      .collection("users")
+      .where("email", "==", email)
+      .limit(1)
+      .get();
+
+    if (snapshot.empty) {
+      res
+        .status(404)
+        .json({success: false, message: "User not found. Please register again."});
+      return;
+    }
+
+    const userDoc = snapshot.docs[0];
+    const userData = userDoc.data();
+
+    if (userData.verified === true) {
+      res.json({
+        success: true,
+        alreadyVerified: true,
+        message: "Your email has already been verified. You are registered!",
+      });
+      return;
+    }
+
+    if (userData.verificationToken !== token) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid verification token. The link may have expired or been used.",
+      });
+      return;
+    }
+
+    if (userData.verificationTokenExpiry) {
+      const expiryDate = new Date(userData.verificationTokenExpiry);
+      if (expiryDate < new Date()) {
+        res.status(400).json({
+          success: false,
+          message:
+            "Verification link has expired. Please request a new verification email.",
+        });
+        return;
+      }
+    }
+
+    await userDoc.ref.update({
+      verified: true,
+      verificationToken: null,
+      verificationTokenExpiry: null,
+      verifiedAt: new Date().toISOString(),
+    });
+
+    res.json({
+      success: true,
+      alreadyVerified: false,
+      message: "Your email has been successfully verified! You are now registered.",
+    });
+  } catch (err) {
+    console.error("verifyEmail function error:", err);
+    res
+      .status(500)
+      .json({success: false, message: "Server error during verification."});
+  }
+});
