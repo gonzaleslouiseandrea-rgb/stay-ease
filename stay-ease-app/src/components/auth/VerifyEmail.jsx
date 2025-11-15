@@ -8,7 +8,15 @@ import {
   Button,
 } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
-const VERIFY_EMAIL_ENDPOINT = import.meta.env.VITE_VERIFY_EMAIL_ENDPOINT;
+import { db } from "../../firebaseConfig";
+import {
+  collection,
+  query,
+  where,
+  limit,
+  getDocs,
+  updateDoc,
+} from "firebase/firestore";
 
 export default function VerifyEmail() {
   const [status, setStatus] = useState("verifying");
@@ -49,47 +57,67 @@ export default function VerifyEmail() {
       }
 
       try {
-        if (!VERIFY_EMAIL_ENDPOINT) {
-          console.error("VITE_VERIFY_EMAIL_ENDPOINT is not configured.");
+        const usersRef = collection(db, "users");
+        const q = query(
+          usersRef,
+          where("email", "==", email),
+          limit(1)
+        );
+
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
           setStatus("failed");
-          setMessage("Verification service is not configured. Please contact support.");
+          setMessage("User not found. Please register again.");
           return;
         }
 
-        const url = `${VERIFY_EMAIL_ENDPOINT}?email=${encodeURIComponent(
-          email
-        )}&token=${encodeURIComponent(token)}`;
+        const userDoc = snapshot.docs[0];
+        const userData = userDoc.data();
 
-        const response = await fetch(url, {
-          method: "GET",
+        if (userData.verified === true) {
+          setVerifiedEmail(email);
+          setStatus("success");
+          setMessage(
+            "Your email has already been verified. You are registered! Redirecting to login..."
+          );
+          setTimeout(() => {
+            redirectToLogin();
+          }, 2000);
+          return;
+        }
+
+        if (userData.verificationToken !== token) {
+          setStatus("failed");
+          setMessage(
+            "Invalid verification token. The link may have expired or been used."
+          );
+          return;
+        }
+
+        if (userData.verificationTokenExpiry) {
+          const expiryDate = new Date(userData.verificationTokenExpiry);
+          if (expiryDate < new Date()) {
+            setStatus("failed");
+            setMessage(
+              "Verification link has expired. Please request a new verification email."
+            );
+            return;
+          }
+        }
+
+        await updateDoc(userDoc.ref, {
+          verified: true,
+          verificationToken: null,
+          verificationTokenExpiry: null,
+          verifiedAt: new Date().toISOString(),
         });
 
-        const data = await response.json().catch(() => null);
-
-        if (!response.ok || !data || data.success === false) {
-          setStatus("failed");
-          setMessage(
-            (data && data.message) ||
-              "An error occurred during verification. Please try again or contact support."
-          );
-          return;
-        }
-
         setVerifiedEmail(email);
-
-        if (data.alreadyVerified) {
-          setStatus("success");
-          setMessage(
-            data.message ||
-              "Your email has already been verified. You are registered! Redirecting to login..."
-          );
-        } else {
-          setStatus("success");
-          setMessage(
-            data.message ||
-              "Your email has been successfully verified! You are now registered. Redirecting to login..."
-          );
-        }
+        setStatus("success");
+        setMessage(
+          "Your email has been successfully verified! You are now registered. Redirecting to login..."
+        );
 
         setTimeout(() => {
           redirectToLogin();

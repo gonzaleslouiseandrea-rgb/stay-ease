@@ -79,7 +79,7 @@ export default function HostDashboard() {
       </Toolbar>
       <Divider sx={{ bgcolor: "#dce5cd" }} />
       <List>
-        [
+        {[
           "Dashboard",
           "My Listings",
           "Add Listing",
